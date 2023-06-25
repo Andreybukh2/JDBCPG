@@ -1,0 +1,641 @@
+ПРЕДВАРИТЕЛЬНО!
+Настраиваем файл pom.xml
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>42.5.4</version>
+    </dependency>
+
+***************************************************************************************************************************************
+1. ДЕЙСТВИЕ (СОЗДАДИМ СОЕДИНЕНИЕ)
+***************************************************************************************************************************************
+* Создаем поля;
+* Делаем их private для того что бы никто потом не смог изменить наши параметры подключения;
+* В параметры подключения вносим наши данные исходя из базы к которой будем подключаться;
+* Так же используем параметры из интерфеса в IDEA;
+
+package org.example;
+
+public class Config {
+    private final String user = "postgres";
+    private final String password = "2510";
+    private final String url = "jdbc:postgresql://localhost:5432/";
+}
+    Для MySQL
+    private static final String user = "root";
+    private static final String password = "2510";
+    private static final String dataBase = "testbase";
+    private static final String url = "jdbc:mysql://localhost:3306/" + dataBase;
+----------------------------------------------------------------------------------------------------------------------------------------
+* Добавим поле с условным названием нашей базы для дальнейшей возможности оптимизации;
+
+package org.example;
+
+public class Config {
+    private final String user = "postgres";
+    private final String password = "2510";
+    private final String dataBase = "MyBase";
+    private final String url = "jdbc:postgresql://localhost:5432/" + dataBase;
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+* Теперь мы создадим метод для обращения к драйвер-менеджеру (DriverManager) и попросить соединение (getConnection)
+* Сделаем этот метод статическим. (Статический метод– это метод, который не имеет доступа к полям объекта,
+ и для вызова такого метода не нужно создавать экземпляр (объект) класса, в котором он объявлен)
+
+package org.example;
+
+public class Config {
+    private final String user = "postgres";
+    private final String password = "2510";
+    private final String dataBase = "MyBase";
+    private final String url = "jdbc:postgresql://localhost:5432/" + dataBase;
+
+*    public static Connection getConnection (){
+*        return DriverManager.getConnection();
+    }
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+* Так как метод является статическим, то и поля в классе сделаем статическими что бы к ним был доступ в getConnection(вот тут будут поля);
+* Так как Connection может выдавать Throws: SQLException SQLTimeoutException, то нам нужно это обработать:
+* 1 Вариант -
+
+	public static Connection getConnection () throws SQLException {
+		return DriverManager.getConnection(url, user, password);
+
+* 2 Вариант - через аннотацию @SneakyThrows, которая позволяет создавать проверенные исключения без использования объявления throws.
+  Это удобно, когда вам нужно вызвать исключение из метода в очень ограничительных интерфейсах, таких как Runnable.
+
+	  @SneakyThrows
+    public static Connection getConnection () {
+        return DriverManager.getConnection(url, user, password);
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+package org.example;
+
+import lombok.SneakyThrows;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class Config {
+    private static final String user = "postgres";
+    private static final String password = "2510";
+    private static final String dataBase = "MyBase";
+    private static final String url = "jdbc:postgresql://localhost:5432/" + dataBase;
+
+    @SneakyThrows
+    public static Connection getConnection () {
+        return DriverManager.getConnection(url, user, password);
+    }
+}
+***************************************************************************************************************************************
+2. ДЕЙСТВИЕ (СОЗДАДИМ ТЕСТ)
+***************************************************************************************************************************************
+package org.example;
+
+import org.junit.Test;
+
+public class ConnectionTest {
+    @Test
+    public void testConnection(){
+    }
+}
+---------------------------------------------------------------------------------------------------------------------------------------
+* Создадим метод для теста на Connection и добавим аннотацию @Test от junit, которая определяет что метод method () является тестовым;
+
+package org.example;
+
+import org.junit.Test;
+import java.sql.Connection;
+
+public class ConnectionTest {
+    @Test
+    public void testConnection(){
+	Connection connection = Config.getConnection();
+* Получили доступ к методам класса Config доступ к соединению;
+    }
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+package org.example;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.sql.Connection;
+
+public class ConnectionTest {
+    @Test
+    public void testConnection(){
+	Connection connection = Config.getConnection();
+	Assert.assertTrue(connection.isValid(1));
+* Проверили что соединение есть и оно сработало за 1 сек
+    }
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+package org.example;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.sql.Connection;
+
+public class ConnectionTest {
+    @Test
+    public void testConnection(){
+	Connection connection = Config.getConnection();
+	Assert.assertTrue(connection.isValid(1));
+	Assert.assertFalse(connection.isClosed());
+	* Проверили что соединение не помечено как закрывающееся
+    }
+}
+---------------------------------------------------------------------------------------------------------------------------------------
+package org.example;
+
+import lombok.SneakyThrows;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.sql.Connection;
+
+public class ConnectionTest {
+    @Test
+    @SneakyThrows - Аннотация @SneakyThrows позволяет бесшумно выбрасывать проверяемые исключения, не объявляя их явно в условии throws вашего метода, как принято делать.
+    Итак, эта аннотация позволяет вам полностью избавиться от(как правило, необходимых в таких случаях) блоков try - catch, поскольку тихо обрабатывает все проверяемые исключения.
+
+    public void testConnection(){
+        Connection connection = Config.getConnection();
+        Assert.assertTrue(connection.isValid(1));
+        Assert.assertFalse(connection.isClosed());
+    }
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+package org.example;
+
+import lombok.SneakyThrows;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.sql.Connection;
+
+public class ConnectionTest {
+    @Test
+    @SneakyThrows
+    public void testConnection(){
+        Connection connection = Config.getConnection();
+        Assert.assertTrue(connection.isValid(1));
+        Assert.assertFalse(connection.isClosed());
+    }
+}
+При тестировании должен получится положительный результат.
+
+***************************************************************************************************************************************
+3. ДЕЙСТВИЕ ()
+***************************************************************************************************************************************
+
+Сервисы которые отвечают за работу с данными, называются DAO-сервисы
+Создадим класс DAO и назовем его UserDao
+
+package org.example;
+
+public class UserDao {
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+Создадим методы, которые будут реализовывать SQL-запросы к нашей базе;
+
+Метод_1 (СОЗДАТЬ БАЗУ)
+Оборачиваем наше соединение в try ресурсы так как соединение может быть или отсутствовать.
+И сразу обрабатываем ошибку SQLException либо через try catch, либо через аннотацию @SneakyThrows
+
+package org.example;
+
+public class UserDao {
+public void createUsersTable() {
+        try (Connection connection = Config.getConnection();{
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+Теперь нужно создавать Statement - это запрос.
+Statement получается из конретного соединения, поэтому приравняем его к connection.
+Statement является ресурсом который нужно закрывать, поэтому его тоже добавляем в try.
+Сначало соединение, потом запрос!
+
+package org.example;
+
+public class UserDao {
+public void createUsersTable() {
+        try (Connection connection = Config.getConnection();
+		Statement statement = connection.createStatement()){
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+передаем в параметры метод .execute , который описывает сам SQL запрос.
+
+package org.example;
+
+import java.sql.*;
+
+public class UserDao {
+public void createUsersTable() {
+        try (Connection connection = Config.getConnection();
+		Statement statement = connection.createStatement()){
+		statement.execute("Сюда передаем наш SQL-запрос");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+Для MySQL      используй - id int primary key auto_increment
+Для PostgreSQL используй - id serial primary key
+Это связано с отличиями в самих БД.
+
+package org.example;
+
+import java.sql.*;
+
+public class UserDao {
+public void createUsersTable() {
+        try (Connection connection = Config.getConnection();Statement statement = connection.createStatement()){
+		statement.execute("CREATE TABLE IF NOT EXISTS users(id serial primary key, name varchar(40), lastName varchar(40), age int)");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+Либо укороченный вариант с применением Lombok @SneakyThrows
+package org.example;
+
+import lombok.SneakyThrows;
+
+import java.sql.*;
+
+public class UserDao {
+    @SneakyThrows
+    public void createUsersTable() {
+        Connection connection = Config.getConnection();
+		Statement statement = connection.createStatement();
+            statement.execute("CREATE TABLE IF NOT EXISTS users(id serial primary key, name varchar(40), lastName varchar(40), age int)");
+	}
+}
+ПРИМЕЧАНИЕ.
+Код для SQL-запроса на создание таблицы может работать непосредственно в БД;
+CREATE TABLE IF NOT EXISTS users
+id serial primary key,
+name varchar(40),
+lastName varchar(40),
+age int
+
+----------------------------------------------------------------------------------------------------------------------------------------
+Метод_2 Удалить базу
+По аналогии создадим следующий метод, который будет удалять таблицу;
+    public void dropUserTable() {
+        try (Connection connection = Config.getConnection(); Statement statement = connection.createStatement()) {
+            statement.execute("DROP TABLE IF EXISTS users");
+            System.out.println("Нам удалось успешно удалить таблицу пользователей");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+или версия с Lombok.@SneakyThrows
+	    @SneakyThrows
+        public void dropUserTable() {
+        Connection connection = Config.getConnection(); Statement statement = connection.createStatement(); {
+            statement.execute("DROP TABLE IF EXISTS users");
+            System.out.println("Нам удалось успешно удалить таблицу пользователей");
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+Касаемо Statement мы рассмотрели первый вид который ничего не выдает в ответе;
+Есть второй вид Statement - это PreparedStatement.
+
+Метод_3 Добавить поля в базу.
+Создадим пользователей в нашу таблицу с использованием PreparedStatement.
+PreparedStatement - используют когда нужно работать на основании динамических данных.
+В нашем случае - это пользователи.
+
+*    public void insertUser() {
+*        try (Connection connection = Config.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement()) {
+*            preparedStatement.execute("");
+*        } catch (SQLException e) {
+*            throw new RuntimeException(e);
+*        }
+*    }
+----------------------------------------------------------------------------------------------------------------------------------------
+добавим конструктор (параметры пользователей)
+*    public void insertUser(String name, String lastName, int age) {
+        try (Connection connection = Config.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(Сюда мы должны положить SQL-запрос)) {
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+Добавить в таблицу users с полями (имя, фамилия, возраст), значения ?, ?, ?
+?, ?, ? - это и есть PreparedStatement значения
+
+    public void insertUser(String name, String lastName, int age) {
+*		final String INSERT_NEW_USER = "INSERT INTO users(name, lastname, age) VALUES(?,?,?)";
+        try (Connection connection = Config.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(Сюда мы должны положить SQL-запрос)) {
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+Создадим PreparedStatement на основе данного запроса final String INSERT_NEW_USER поместив название запроса в параметры connection.prepareStatement()
+
+    public void insertUser(String name, String lastName, int age) {
+        final String INSERT_NEW_USER = "INSERT INTO users(name, lastname, age) VALUES(?,?,?)";
+        try (Connection connection = Config.getConnection();
+*            PreparedStatement preparedStatement = connection.prepareStatement(INSERT_NEW_USER)) {
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+Теперь в эти вопросы нам по очереди нужно положить параметры.
+Очередность добавления параметров определим индексом в соответствующих методах setString и setInt
+
+    public void insertUser(String name, String lastName, int age) {
+        final String INSERT_NEW_USER = "INSERT INTO users(name, lastname, age) VALUES(?,?,?)";
+        try (Connection connection = Config.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(INSERT_NEW_USER)) {
+*           preparedStatement.setString(1, name);
+*           preparedStatement.setString(2, lastName);
+*           preparedStatement.setInt(3, age);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+Вызовем наш метод .execute(); что бы отправить запрос
+
+	public void insertUser(String name, String lastName, int age) {
+        final String INSERT_NEW_USER = "INSERT INTO users(name, lastname, age) VALUES(?,?,?)";
+        try (Connection connection = Config.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(INSERT_NEW_USER)) {
+            preparedStatement.setString(1, name);
+            preparedStatement.setString(2, lastName);
+            preparedStatement.setInt(3, age);
+*            preparedStatement.execute(Внутрь ничего не кладем потому что уже есть параметры через set);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+Ну и заменим try catch throw на @SneakyThrows
+    @SneakyThrows
+    public void insertUser(String name, String lastName, int age) {
+        final String INSERT_NEW_USER = "INSERT INTO users(name, lastname, age) VALUES(?,?,?)";
+        Connection connection = Config.getConnection();
+PreparedStatement preparedStatement = connection.prepareStatement(INSERT_NEW_USER); {
+            preparedStatement.setString(1, name);
+            preparedStatement.setString(2, lastName);
+            preparedStatement.setInt(3, age);
+            preparedStatement.execute();
+        }
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+Метод_4 Удалить поле по id
+Все по аналогии. Так же можно заменить try catch throw на @SneakyThrows
+
+	public void deleteUser(int id) {
+        final String DELETE_USER = "DELETE FROM users WHERE id = ?";
+        try (Connection connection = Config.getConnection();
+             PreparedStatement statement = connection.prepareStatement(DELETE_USER)) {
+            statement.setInt(1, id);
+            statement.execute();
+            System.out.println("Удалили поле таблицы с номером id: " + id);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+Метод_5 Получать поля (пользователей)
+Для реализации этого метода, мы создадим класс DTO.
+
+package org.example;
+
+import lombok.Data;
+
+@Data
+это сокращенная аннотация, сочетающая возможности
+@ToString, @EqualsAndHashCode, @Getter @Setter и @RequiredArgsConstructor.
+Так что @Data генерирует весь шаблонный код, вовлеченный в работу с объектами POJO (Plain Old Java Objects).
+Это, в частности, дает нам геттеры для всех полей, сеттеры для всех нефинальных полей,
+правильные реализации toString, equals и hashCode, охватывающие все поля класса, а также конструктор для всех финальных полей.
+
+public class UserDto {
+    private int id;
+    private String name;
+    private String lastName;
+    private int age;
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+Создаем метод который поместит в List Дженерик типа UserDto. Тоесть там будет находится id, name, lastName, age
+    public List<UserDto> getAllUsers() {
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+Входные параметры нам не нужны, поэтому будем использовать Statement, а не PreparedStatement
+	public List<UserDto> getAllUsers() {
+*        try (Connection connection = Config.getConnection();
+				Statement statement = connection.createStatement()) {
+*        } catch (SQLException e) {
+*            throw new RuntimeException(e);
+*        }
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+execute - возвращает булево значение, а executeQuery возвращает конкретный запрос и в параметры мы используем SQL-запрос (Показать все из таблицы users)
+    public List<UserDto> getAllUsers() {
+        try (Connection connection = Config.getConnection();
+		Statement statement = connection.createStatement()) {
+*            statement.executeQuery("SELECT * FROM users");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+Возвращаем ResultSet -
+Класс ResultSet представляет результирующий набор данных и обеспечивает приложению построчный доступ к результатам запросов.
+При обработке запроса ResultSet поддерживает указатель на текущую обрабатываемую строку.
+Доступ к данным ResultSet обеспечивает посредством набора get-методов, которые организуют доступ к колонкам текущей строки.
+Метод ResultSet.next используется для перемещения к следующей строке ResultSet, делая ее текущей.
+
+    public List<UserDto> getAllUsers() {
+        try (Connection connection = Config.getConnection();Statement statement = connection.createStatement()) {
+*            ResultSet resultSet = statement.executeQuery("SELECT * FROM users");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+resultSet.next - проверяет есть ли в ResultSet следующие данные или нет (булево) и если есть, то дабавит, а если нет, то список закончен
+
+    public List<UserDto> getAllUsers() {
+        try (Connection connection = Config.getConnection();Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM users");
+*            while (resultSet.next());
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+Получение данных по порядку. Берем данные в соответствии с их типом и указываем на получение.
+Некий аналог схемы получения данных.
+
+    public List<UserDto> getAllUsers() {
+        try (Connection connection = Config.getConnection();Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM users");
+            while (resultSet.next());
+*            int id = resultSet.getint("id");
+*            String name = resultSet.getString("name");
+*            String lastName = resultSet.getString("lastName");
+*            int age = resultSet.getInt("age");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+List<UserDto> userDtoList = new ArrayList<>(); - весь список который получится нужно будет где то хранить. Мы его положим в ArrayList.
+    public List<UserDto> getAllUsers() {
+*        List<UserDto> userDtoList = new ArrayList<>();
+        try (Connection connection = Config.getConnection();Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM users");
+            while (resultSet.next());
+            int id = resultSet.getint("id");
+            String name = resultSet.getString("name");
+            String lastName = resultSet.getString("lastName");
+            int age = resultSet.getInt("age");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+Создадим экземпляр класса UserDto (пользователя которого создали) и в конструктор внесем поля.
+ВНИМАНИЕ! ЧТо бы поля добавились, нужно в классе UserDto добавить аннотацию @AllArgsConstructor
+
+    public List<UserDto> getAllUsers() {
+        List<UserDto> userDtoList = new ArrayList<>();
+        try (Connection connection = Config.getConnection();Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM users");
+            while (resultSet.next());
+            int id = resultSet.getint("id");
+            String name = resultSet.getString("name");
+            String lastName = resultSet.getString("lastName");
+            int age = resultSet.getInt("age");
+*            UserDto userDto = new UserDto(id, name, lastName, age);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+userDtoList.add(userDto) - в ArrayList по имени userDtoList методом .add, добавим (userDto) нашего юзера.
+
+    public List<UserDto> getAllUsers() {
+        List<UserDto> userDtoList = new ArrayList<>();
+        try (Connection connection = Config.getConnection();Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM users");
+            while (resultSet.next());
+            int id = resultSet.getInt("id");
+            String name = resultSet.getString("name");
+            String lastName = resultSet.getString("lastName");
+            int age = resultSet.getInt("age");
+            UserDto userDto = new UserDto(id, name, lastName, age);
+*            userDtoList.add(userDto);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+----------------------------------------------------------------------------------------------------------------------------------------
+Так как этот метод не Void, то нужно сделать return. И в return мы вернем лист из нашего списка.
+
+    public List<UserDto> getAllUsers() {
+        List<UserDto> userDtoList = new ArrayList<>();
+        try (Connection connection = Config.getConnection();Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM users");
+            while (resultSet.next());
+            int id = resultSet.getInt("id");
+            String name = resultSet.getString("name");
+            String lastName = resultSet.getString("lastName");
+            int age = resultSet.getInt("age");
+            UserDto userDto = new UserDto(id, name, lastName, age);
+            userDtoList.add(userDto);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+*        return userDtoList;
+    }
+}
+
+ИТОГ:
+Нам нужно получить список всех полей из БД;
+Мы создали соединение, создали запрос, в запросе указали вывести все что есть в БД и вернуть это в виде ResultSet.
+Так как ResultSet - это вещь абстрактная, то нам нужно понять есть ли там данные или нет.
+Используем цикл while ResultSet.next и пока есть поля, то next будет проверять следующее поле и возвращает true пока
+есть данные. Возвращаем нашего юзера и кладем в лист ArrayList.
+----------------------------------------------------------------------------------------------------------------------------------------
+
+***************************************************************************************************************************************
+4. ДЕЙСТВИЕ (КЛАСС APP)
+***************************************************************************************************************************************
+В классе App, создадим метод main, создадим экземпляр объекта UserDao для доступа к методам из класса UserDao
+Выполним наши запросы
+
+package org.example;
+
+public class App
+{
+    public static void main( String[] args )
+    {
+*        UserDao userDao = new UserDao();
+*        userDao.createUsersTable();
+    }
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+package org.example;
+
+public class App
+{
+    public static void main( String[] args )
+    {
+        UserDao userDao = new UserDao();
+*        userDao.dropUserTable();
+        userDao.createUsersTable();
+        userDao.insertUser("Андрей","Булдаков",33);
+        userDao.insertUser("Сергей","Гром",50);
+        userDao.insertUser("Антон","Хариев",34);
+        userDao.insertUser("Евген","Левин",22);
+    }
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+package org.example;
+
+public class App
+{
+    public static void main( String[] args )
+    {
+        UserDao userDao = new UserDao();
+        userDao.dropUserTable();
+        userDao.createUsersTable();
+        userDao.insertUser("Андрей","Булдаков",33);
+        userDao.insertUser("Сергей","Гром",50);
+        userDao.insertUser("Антон","Хариев",34);
+        userDao.insertUser("Евген","Левин",22);
+*        userDao.deleteUser(3);
+    }
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+В итоге:
+1. Создали Connection с нашей БД (в этом примере PG) - Config файл отвечает за соединение с БД и передачу параметров в DriverManager.getConnection;
+2. UserDao - содержит методы в которых прописаны SQL-запросы; По сути эти методы работают примерно по одной схеме.
+В них есть:
+connection = Config.getConnection(); - соединение с БД через методы Config
+statement = connection.createStatement(); - возвращает результат SQL-запроса прописанного в параметрах;
+Аннотации можно было конечно и не применять.
+@SneakyThrows - заменяет блоки try catch для "отлова" SQLException которое предоставляет информацию об ошибке доступа к БД.
+@Data - Геттеры, сеттеры;
+@AllArgsConstructor - передает начальные значения полей в конструктор; (можно было создать и в ручную через Alt+Insert
+3. UserDto - по сути содержит схему нашей таблицы (имена колонок если так можно выразиться)
+4. App - реализация методов через создание объекта класса;
