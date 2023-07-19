@@ -379,7 +379,7 @@ PreparedStatement - используют когда нужно работать 
             preparedStatement.setString(1, name);
             preparedStatement.setString(2, lastName);
             preparedStatement.setInt(3, age);
-*            preparedStatement.execute(Внутрь ничего не кладем потому что уже есть параметры через set);
+*           preparedStatement.execute(Внутрь ничего не кладем потому что уже есть параметры через set);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -498,9 +498,9 @@ resultSet.next - проверяет есть ли в ResultSet следующи�
         }
     }
 ----------------------------------------------------------------------------------------------------------------------------------------
-List<UserDto> userDtoList = new ArrayList<>(); - весь список который получится нужно будет где то хранить. Мы его положим в ArrayList.
+List<UserDto> personDtoList = new ArrayList<>(); - весь список который получится нужно будет где то хранить. Мы его положим в ArrayList.
     public List<UserDto> getAllUsers() {
-*        List<UserDto> userDtoList = new ArrayList<>();
+*        List<UserDto> personDtoList = new ArrayList<>();
         try (Connection connection = Config.getConnection();Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery("SELECT * FROM users");
             while (resultSet.next());
@@ -517,7 +517,7 @@ List<UserDto> userDtoList = new ArrayList<>(); - весь список кото�
 ВНИМАНИЕ! ЧТо бы поля добавились, нужно в классе UserDto добавить аннотацию @AllArgsConstructor
 
     public List<UserDto> getAllUsers() {
-        List<UserDto> userDtoList = new ArrayList<>();
+        List<UserDto> personDtoList = new ArrayList<>();
         try (Connection connection = Config.getConnection();Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery("SELECT * FROM users");
             while (resultSet.next());
@@ -525,16 +525,16 @@ List<UserDto> userDtoList = new ArrayList<>(); - весь список кото�
             String name = resultSet.getString("name");
             String lastName = resultSet.getString("lastName");
             int age = resultSet.getInt("age");
-*            UserDto userDto = new UserDto(id, name, lastName, age);
+*            UserDto personDto = new UserDto(id, name, lastName, age);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 ----------------------------------------------------------------------------------------------------------------------------------------
-userDtoList.add(userDto) - в ArrayList по имени userDtoList методом .add, добавим (userDto) нашего юзера.
+personDtoList.add(personDto) - в ArrayList по имени personDtoList методом .add, добавим (personDto) нашего юзера.
 
     public List<UserDto> getAllUsers() {
-        List<UserDto> userDtoList = new ArrayList<>();
+        List<UserDto> personDtoList = new ArrayList<>();
         try (Connection connection = Config.getConnection();Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery("SELECT * FROM users");
             while (resultSet.next());
@@ -542,8 +542,8 @@ userDtoList.add(userDto) - в ArrayList по имени userDtoList методо
             String name = resultSet.getString("name");
             String lastName = resultSet.getString("lastName");
             int age = resultSet.getInt("age");
-            UserDto userDto = new UserDto(id, name, lastName, age);
-*            userDtoList.add(userDto);
+            UserDto personDto = new UserDto(id, name, lastName, age);
+*            personDtoList.add(personDto);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -552,7 +552,7 @@ userDtoList.add(userDto) - в ArrayList по имени userDtoList методо
 Так как этот метод не Void, то нужно сделать return. И в return мы вернем лист из нашего списка.
 
     public List<UserDto> getAllUsers() {
-        List<UserDto> userDtoList = new ArrayList<>();
+        List<UserDto> personDtoList = new ArrayList<>();
         try (Connection connection = Config.getConnection();Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery("SELECT * FROM users");
             while (resultSet.next());
@@ -560,12 +560,12 @@ userDtoList.add(userDto) - в ArrayList по имени userDtoList методо
             String name = resultSet.getString("name");
             String lastName = resultSet.getString("lastName");
             int age = resultSet.getInt("age");
-            UserDto userDto = new UserDto(id, name, lastName, age);
-            userDtoList.add(userDto);
+            UserDto personDto = new UserDto(id, name, lastName, age);
+            personDtoList.add(personDto);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-*        return userDtoList;
+*        return personDtoList;
     }
 }
 
@@ -589,8 +589,8 @@ public class App
 {
     public static void main( String[] args )
     {
-*        UserDao userDao = new UserDao();
-*        userDao.createUsersTable();
+*        UserDao personDao = new UserDao();
+*        personDao.createUsersTable();
     }
 }
 ----------------------------------------------------------------------------------------------------------------------------------------
@@ -600,13 +600,13 @@ public class App
 {
     public static void main( String[] args )
     {
-        UserDao userDao = new UserDao();
-*        userDao.dropUserTable();
-        userDao.createUsersTable();
-        userDao.insertUser("Андрей","Булдаков",33);
-        userDao.insertUser("Сергей","Гром",50);
-        userDao.insertUser("Антон","Хариев",34);
-        userDao.insertUser("Евген","Левин",22);
+        UserDao personDao = new UserDao();
+*        personDao.dropUserTable();
+        personDao.createUsersTable();
+        personDao.insertUser("Андрей","Булдаков",33);
+        personDao.insertUser("Сергей","Гром",50);
+        personDao.insertUser("Антон","Хариев",34);
+        personDao.insertUser("Евген","Левин",22);
     }
 }
 ----------------------------------------------------------------------------------------------------------------------------------------
@@ -616,14 +616,14 @@ public class App
 {
     public static void main( String[] args )
     {
-        UserDao userDao = new UserDao();
-        userDao.dropUserTable();
-        userDao.createUsersTable();
-        userDao.insertUser("Андрей","Булдаков",33);
-        userDao.insertUser("Сергей","Гром",50);
-        userDao.insertUser("Антон","Хариев",34);
-        userDao.insertUser("Евген","Левин",22);
-*        userDao.deleteUser(3);
+        UserDao personDao = new UserDao();
+        personDao.dropUserTable();
+        personDao.createUsersTable();
+        personDao.insertUser("Андрей","Булдаков",33);
+        personDao.insertUser("Сергей","Гром",50);
+        personDao.insertUser("Антон","Хариев",34);
+        personDao.insertUser("Евген","Левин",22);
+*        personDao.deleteUser(3);
     }
 }
 ----------------------------------------------------------------------------------------------------------------------------------------
